@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAG Chatbot</title>
+    <style>
+      body { font-family: sans-serif; max-width: 500px; margin: 2rem auto; background: #f9f9f9; }
+      h2 { text-align: center; }
+      .section { margin-bottom: 2rem; }
+      .chat-history { background: #fff; border-radius: 6px; padding: 1rem; min-height: 120px; margin-bottom: 1rem; }
+      .chat-turn { margin-bottom: 1rem; }
+      .chat-turn.user { color: #0074d9; }
+      .chat-turn.bot { color: #2ecc40; }
+      .error { color: red; margin-top: 1rem; }
+      input, button, textarea { width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; }
+      button { background: #0074d9; color: #fff; border: none; cursor: pointer; }
+      button:hover { background: #005fa3; }
+    </style>
+  </head>
+  <body>
+    <h2>RAG Chatbot</h2>
+    <div class="section">
+      <form id="upload-form">
+        <label>Upload PDF or TXT:</label>
+        <input type="file" id="file-input" />
+        <button type="submit">Upload</button>
+      </form>
+      <form id="wiki-form">
+        <label>Add Wikipedia URL:</label>
+        <input type="text" id="wiki-url" placeholder="https://en.wikipedia.org/wiki/..." />
+        <button type="submit">Add Wikipedia</button>
+      </form>
+      <button id="start-session">Start Chat Session</button>
+      <div id="session-id" style="margin-top: 0.5rem; font-size: 0.9em; color: #888;"></div>
+    </div>
+    <div class="section">
+      <div class="chat-history" id="chat-history"></div>
+      <form id="chat-form">
+        <textarea id="chat-input" placeholder="Type your question..." rows="2"></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+    <div class="error" id="error"></div>
+    <script>
+      const API_URL = "http://localhost:8000";
+      let sessionId = "";
+      let chatHistory = [];
+
+      document.getElementById('upload-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const file = document.getElementById('file-input').files[0];
+        if (!file) return setError('Please select a file.');
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+          await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
+          setError('File uploaded and indexed!');
+        } catch {
+          setError('Upload failed.');
+        }
+      };
+
+      document.getElementById('wiki-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const url = document.getElementById('wiki-url').value;
+        if (!url) return setError('Please enter a Wikipedia URL.');
+        try {
+          await fetch(`${API_URL}/add_wikipedia`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+          setError('Wikipedia article added!');
+        } catch {
+          setError('Failed to add Wikipedia article.');
+        }
+      };
+
+      document.getElementById('start-session').onclick = async () => {
+        try {
+          const res = await fetch(`${API_URL}/start_session`, { method: 'POST' });
+          const data = await res.json();
+          sessionId = data.session_id;
+          chatHistory = [];
+          document.getElementById('session-id').textContent = `Session: ${sessionId}`;
+          renderChat();
+          setError('');
+        } catch {
+          setError('Failed to start session.');
+        }
+      };
+
+      document.getElementById('chat-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input').value.trim();
+        if (!input) return;
+        if (!sessionId) return setError('Start a session first!');
+        try {
+          const res = await fetch(`${API_URL}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId, query: input })
+          });
+          const data = await res.json();
+          chatHistory = data.history || [];
+          renderChat();
+          document.getElementById('chat-input').value = '';
+          setError('');
+        } catch {
+          setError('Chat failed.');
+        }
+      };
+
+      function renderChat() {
+        const chatDiv = document.getElementById('chat-history');
+        chatDiv.innerHTML = chatHistory.map(turn =>
+          `<div class="chat-turn ${turn.role}"><b>${turn.role === 'user' ? 'You' : 'Bot'}:</b> ${turn.content}</div>`
+        ).join('');
+      }
+
+      function setError(msg) {
+        document.getElementById('error').textContent = msg;
+      }
+    </script>
+  </body>
+</html> 

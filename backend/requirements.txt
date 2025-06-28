@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+langgraph
+faiss-cpu
+pydantic
+requests
+python-dotenv
+httpx 
+pydantic-settings
+beautifulsoup4
+python-multipart
+PyPDF2
+langchain_google_genai
+langchain
+langchain_community
+loguru
+langsmith
