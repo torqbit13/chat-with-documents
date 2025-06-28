@@ -1,10 +1,10 @@
 from loguru import logger
 from fastapi import APIRouter, UploadFile, File, HTTPException, Body
 from pydantic import BaseModel
-from backend.app.vectorstore.faiss_store import VectorStoreSingleton
-from backend.app.utils.file_parser import parse_file
-from backend.app.utils.wikipedia import fetch_wikipedia_content
-from backend.app.chat.langgraph_manager import langgraph_manager
+from app.vectorstore.faiss_store import VectorStoreSingleton
+from app.utils.file_parser import parse_file
+from app.utils.wikipedia import fetch_wikipedia_content
+from app.chat.langgraph_manager import langgraph_manager
 
 router = APIRouter()
 

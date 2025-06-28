@@ -14,40 +14,45 @@ A production-grade, modular Retrieval-Augmented Generation (RAG) chatbot system 
 
 ## Folder Structure
 ```
-backend/    # FastAPI, LangGraph, Gemini, FAISS, ingestion, API
-frontend/   # Minimal HTML/JS frontend
+app/         # Backend (FastAPI, LangGraph, Gemini, FAISS, ingestion, API)
+frontend/    # Minimal HTML/JS frontend (index.html, etc.)
+requirements.txt
+Dockerfile
+README.md
 ```
 
 ## Quickstart
 
 ### 1. Environment Variables
-Create a `.env` file in `backend/` (or set via Docker):
+Create a `.env` file in the project root (or set via Docker):
 ```
 GEMINI_API_KEY=your-gemini-api-key
 ```
 
 ### 2. Local Development
 ```bash
-# Backend
-cd backend
+# Install dependencies
 pip install -r requirements.txt
+
+# Run the backend (serves both API and frontend)
 uvicorn app.main:app --reload
 
-# Frontend
-# (No build step needed; open frontend/index.html in your browser or serve statically)
+# Visit the app in your browser:
+# http://localhost:8000/
 ```
 
-### 3. Docker Compose
+### 3. Docker Build & Run
 ```bash
-docker-compose up --build
+docker build -t rag-chatbot .
+docker run -p 8000:8000 --env-file .env rag-chatbot
 ```
-- Backend: http://localhost:8000
-- Frontend: http://localhost:8000 (served by FastAPI)
+- The backend and frontend will both be available at: http://localhost:8000/
 
 ## API Endpoints (Summary)
 - `POST /upload` — Upload document (PDF, TXT, etc.)
 - `POST /add_wikipedia` — Add Wikipedia URL as knowledge
 - `POST /chat` — Chat with the RAG bot (session-based)
+- `POST /start_session` — Start a new chat session
 
 ## Tech Stack
 - FastAPI, LangGraph, LangChain, Gemini LLM, FAISS, Docker, HTML/JS

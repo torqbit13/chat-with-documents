@@ -3,7 +3,7 @@ from langchain_community.vectorstores import FAISS
 from loguru import logger
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-from backend.app.config import (
+from app.config import (
     CHUNK_OVERLAP,
     CHUNK_SIZE,
     EMBEDDING_MODEL_NAME,

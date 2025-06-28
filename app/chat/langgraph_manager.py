@@ -7,11 +7,11 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph, add_messages
 from loguru import logger
 
-from backend.app.config import (
+from app.config import (
     GOOGLE_API_KEY,
     LLM_MODEL_NAME,
 )
-from backend.app.vectorstore.faiss_store import VectorStoreSingleton
+from app.vectorstore.faiss_store import VectorStoreSingleton
 
 
 

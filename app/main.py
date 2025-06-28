@@ -22,7 +22,7 @@ app.mount(
     "/static",
     StaticFiles(
         directory=os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../frontend")
+            os.path.join(os.path.dirname(__file__), "../frontend")
         )
     ),
     name="static",
@@ -34,6 +34,6 @@ app.mount(
 def root():
     return FileResponse(
         os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../frontend/index.html")
+            os.path.join(os.path.dirname(__file__), "../frontend/index.html")
         )
     )
