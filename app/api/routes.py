@@ -1,26 +1,26 @@
 from loguru import logger
 from fastapi import APIRouter, UploadFile, File, HTTPException, Body
 from pydantic import BaseModel
-from app.vectorstore.faiss_store import VectorStoreSingleton
+from app.vectorstore.faiss_store import SessionVectorStore
 from app.utils.file_parser import parse_file
 from app.utils.wikipedia import fetch_wikipedia_content
 from app.chat.langgraph_manager import langgraph_manager
 
 router = APIRouter()
 
+
 class WikiRequest(BaseModel):
     url: str
+    session_id: str
+
 
 @router.post("/upload")
-def upload_file(file: UploadFile = File(...)):
+def upload_file(file: UploadFile = File(...), session_id: str = Body(...)):
     try:
-        #Document Ingestion
         text = parse_file(file)
-        #Text Chunking
-        docs = VectorStoreSingleton.chunk_text(text)
+        docs = SessionVectorStore.chunk_text(text)
         logger.debug(f"Splited docs: {docs}")
-        #Embedding Generation & Vector Storage
-        VectorStoreSingleton.add_documents(docs)
+        SessionVectorStore.add_documents(session_id, docs)
         return {"message": "File uploaded, chunked, and indexed successfully."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -29,15 +29,13 @@ def upload_file(file: UploadFile = File(...)):
 @router.post("/add_wikipedia")
 def add_wikipedia(request: WikiRequest):
     try:
-        #Document Ingestion
         url = request.url
+        session_id = request.session_id
         title, text = fetch_wikipedia_content(url)
         logger.info(f"Title of the wikipedia Article: {title}")
-        #Text Chunking
-        docs = VectorStoreSingleton.chunk_text(f"{title}\n{text}")
+        docs = SessionVectorStore.chunk_text(f"{title}\n{text}")
         logger.debug(f"Wikipedia article chunks: {docs}")
-        #Embedding Generation & Vector Storage
-        VectorStoreSingleton.add_documents(docs)
+        SessionVectorStore.add_documents(session_id, docs)
         return {"message": f"Wikipedia article '{title}' chunked and indexed."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

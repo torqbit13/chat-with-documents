@@ -59,8 +59,10 @@
           e.preventDefault();
           const file = document.getElementById('file-input').files[0];
           if (!file) return setError('Please select a file.');
+          if (!sessionId) return setError('Start a session first!');
           const formData = new FormData();
           formData.append('file', file);
+          formData.append('session_id', sessionId);
           try {
             await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
             setError('File uploaded and indexed!');
@@ -73,11 +75,12 @@
           e.preventDefault();
           const url = document.getElementById('wiki-url').value;
           if (!url) return setError('Please enter a Wikipedia URL.');
+          if (!sessionId) return setError('Start a session first!');
           try {
             await fetch(`${API_URL}/add_wikipedia`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url })
+              body: JSON.stringify({ url, session_id: sessionId })
             });
             setError('Wikipedia article added!');
           } catch {

@@ -11,8 +11,7 @@ from app.config import (
     GOOGLE_API_KEY,
     LLM_MODEL_NAME,
 )
-from app.vectorstore.faiss_store import VectorStoreSingleton
-
+from app.vectorstore.faiss_store import SessionVectorStore
 
 
 # State: messages (list of BaseMessage)
@@ -21,18 +20,19 @@ class ChatState(TypedDict):
 
     messages: Annotated[List[BaseMessage], add_messages]
     query: str
-    context: str 
+    context: str
     session_id: str
 
 
-#Retrieval Node
+# Retrieval Node
 def retrieve_context(state: ChatState) -> ChatState:
     logger.debug(
         f"-----STATE----- at the BEGINNIG of the function-> retrieve_context: {state}"
     )
     logger.debug(f"Type of state: {type(state)}")
 
-    retriever = VectorStoreSingleton.get_retriever()
+    session_id = state["session_id"]
+    retriever = SessionVectorStore.get_retriever(session_id)
     logger.debug(f"The retriver object: {retriever}")
     if retriever is None:
         context = "[No documents indexed yet.]"
@@ -40,7 +40,7 @@ def retrieve_context(state: ChatState) -> ChatState:
         docs = retriever.get_relevant_documents(state["query"])
         context = "\n".join([doc.page_content for doc in docs])
 
-    #Store context for use in call_gemini
+    # Store context for use in call_gemini
     state["context"] = context
     logger.debug(
         f"-----STATE----- at the END of the function-> retrieve_context: {state}"
@@ -48,7 +48,7 @@ def retrieve_context(state: ChatState) -> ChatState:
     return state
 
 
-#LLM call Node
+# LLM call Node
 def call_gemini(state: ChatState) -> ChatState:
     llm = ChatGoogleGenerativeAI(model=LLM_MODEL_NAME, google_api_key=GOOGLE_API_KEY)
 
@@ -61,7 +61,7 @@ def call_gemini(state: ChatState) -> ChatState:
     response = llm.invoke(messages)
     logger.info(f"The response from the LLM: {response}")
 
-    state["messages"].append(HumanMessage(content= state["query"]))
+    state["messages"].append(HumanMessage(content=state["query"]))
 
     state["messages"].append(response)
 
@@ -76,7 +76,7 @@ graph.add_edge(START, "retrieve_context")
 graph.add_edge("retrieve_context", "call_gemini")
 graph.add_edge("call_gemini", END)
 
-#MemorySaver for checkpointing
+# MemorySaver for checkpointing
 memory = MemorySaver()
 langgraph_flow = graph.compile(checkpointer=memory)
 
