@@ -43,85 +43,94 @@
     </div>
     <div class="error" id="error"></div>
     <script>
-      const API_URL = "http://localhost:8000";
+      let API_URL = "";
       let sessionId = "";
       let chatHistory = [];
 
-      document.getElementById('upload-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const file = document.getElementById('file-input').files[0];
-        if (!file) return setError('Please select a file.');
-        const formData = new FormData();
-        formData.append('file', file);
-        try {
-          await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
-          setError('File uploaded and indexed!');
-        } catch {
-          setError('Upload failed.');
-        }
-      };
-
-      document.getElementById('wiki-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const url = document.getElementById('wiki-url').value;
-        if (!url) return setError('Please enter a Wikipedia URL.');
-        try {
-          await fetch(`${API_URL}/add_wikipedia`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
-          });
-          setError('Wikipedia article added!');
-        } catch {
-          setError('Failed to add Wikipedia article.');
-        }
-      };
-
-      document.getElementById('start-session').onclick = async () => {
-        try {
-          const res = await fetch(`${API_URL}/start_session`, { method: 'POST' });
-          const data = await res.json();
-          sessionId = data.session_id;
-          chatHistory = [];
-          document.getElementById('session-id').textContent = `Session: ${sessionId}`;
-          renderChat();
-          setError('');
-        } catch {
-          setError('Failed to start session.');
-        }
-      };
-
-      document.getElementById('chat-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const input = document.getElementById('chat-input').value.trim();
-        if (!input) return;
-        if (!sessionId) return setError('Start a session first!');
-        try {
-          const res = await fetch(`${API_URL}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId, query: input })
-          });
-          const data = await res.json();
-          chatHistory = data.history || [];
-          renderChat();
-          document.getElementById('chat-input').value = '';
-          setError('');
-        } catch {
-          setError('Chat failed.');
-        }
-      };
-
-      function renderChat() {
-        const chatDiv = document.getElementById('chat-history');
-        chatDiv.innerHTML = chatHistory.map(turn =>
-          `<div class="chat-turn ${turn.role}"><b>${turn.role === 'user' ? 'You' : 'Bot'}:</b> ${turn.content}</div>`
-        ).join('');
+      // Load config.json
+      async function loadConfig() {
+        const res = await fetch('config.json');
+        const config = await res.json();
+        API_URL = config.API_URL;
       }
 
-      function setError(msg) {
-        document.getElementById('error').textContent = msg;
-      }
+      loadConfig().then(() => {
+        document.getElementById('upload-form').onsubmit = async (e) => {
+          e.preventDefault();
+          const file = document.getElementById('file-input').files[0];
+          if (!file) return setError('Please select a file.');
+          const formData = new FormData();
+          formData.append('file', file);
+          try {
+            await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
+            setError('File uploaded and indexed!');
+          } catch {
+            setError('Upload failed.');
+          }
+        };
+
+        document.getElementById('wiki-form').onsubmit = async (e) => {
+          e.preventDefault();
+          const url = document.getElementById('wiki-url').value;
+          if (!url) return setError('Please enter a Wikipedia URL.');
+          try {
+            await fetch(`${API_URL}/add_wikipedia`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url })
+            });
+            setError('Wikipedia article added!');
+          } catch {
+            setError('Failed to add Wikipedia article.');
+          }
+        };
+
+        document.getElementById('start-session').onclick = async () => {
+          try {
+            const res = await fetch(`${API_URL}/start_session`, { method: 'POST' });
+            const data = await res.json();
+            sessionId = data.session_id;
+            chatHistory = [];
+            document.getElementById('session-id').textContent = `Session: ${sessionId}`;
+            renderChat();
+            setError('');
+          } catch {
+            setError('Failed to start session.');
+          }
+        };
+
+        document.getElementById('chat-form').onsubmit = async (e) => {
+          e.preventDefault();
+          const input = document.getElementById('chat-input').value.trim();
+          if (!input) return;
+          if (!sessionId) return setError('Start a session first!');
+          try {
+            const res = await fetch(`${API_URL}/chat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: sessionId, query: input })
+            });
+            const data = await res.json();
+            chatHistory = data.history || [];
+            renderChat();
+            document.getElementById('chat-input').value = '';
+            setError('');
+          } catch {
+            setError('Chat failed.');
+          }
+        };
+
+        function renderChat() {
+          const chatDiv = document.getElementById('chat-history');
+          chatDiv.innerHTML = chatHistory.map(turn =>
+            `<div class="chat-turn ${turn.role}"><b>${turn.role === 'user' ? 'You' : 'Bot'}:</b> ${turn.content}</div>`
+          ).join('');
+        }
+
+        function setError(msg) {
+          document.getElementById('error').textContent = msg;
+        }
+      });
     </script>
   </body>
 </html> 
